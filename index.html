@@ -199,7 +199,19 @@
 </style>
 </head>
 <body>
-<div id="shell">
+<!-- PIN GATE — simple shared team PIN, checked against Script Properties on -->
+<!-- the backend. Shown once per browser session (sessionStorage). -->
+<div id="pinGateScreen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div class="panel riveted" style="max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:34px;margin-bottom:6px;">🔒</div>
+    <div class="step-title" style="font-size:19px;">Routine Card</div>
+    <div class="step-meta" style="margin-bottom:14px;">กรอกรหัส PIN ของทีมเพื่อเข้าใช้งาน</div>
+    <input type="text" id="pinInput" inputmode="numeric" placeholder="PIN" style="text-align:center;font-size:22px;letter-spacing:.2em;font-family:var(--font-mono);">
+    <button class="btn-primary" onclick="submitPin()">เข้าใช้งาน</button>
+  </div>
+</div>
+
+<div id="shell" class="hidden">
   <div class="topbar">
     <div>
       <h1>Routine Card</h1>
@@ -328,6 +340,19 @@
 <!-- Hidden element required by html5-qrcode's scanFile() API (no live camera involved) -->
 <div id="scanFileRegion" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;"></div>
 
+<!-- LIVE CAMERA SCAN — now possible since this page isn't served inside -->
+<!-- Apps Script's sandboxed iframe anymore. Tried first; falls back to the -->
+<!-- photo+crop+OCR pipeline automatically if the camera won't open. -->
+<div class="modal-bg" id="liveScanModalBg">
+  <div class="modal" style="max-width:440px;">
+    <h3 style="color:var(--ink-900);">สแกน QR / Barcode</h3>
+    <div class="sub2">เล็งกล้องไปที่ QR code หรือ barcode ให้อยู่กึ่งกลางกรอบ</div>
+    <div id="liveScanRegion" style="width:100%;border-radius:10px;overflow:hidden;background:#000;min-height:240px;"></div>
+    <button class="btn-secondary" onclick="closeLiveScan()">ยกเลิก</button>
+    <button class="btn-ghost" onclick="switchToPhotoMode()">📷 ถ่ายรูปแทน (ถ้ากล้องสดเปิดไม่ได้)</button>
+  </div>
+</div>
+
 <!-- SCAN FRAMING GUIDE — shown right before camera opens, since we can't overlay -->
 <!-- guidance on top of iOS's native camera view itself (not accessible to web pages) -->
 <div class="modal-bg" id="scanGuideModalBg">
@@ -406,12 +431,13 @@
 
 <script>
 // ================================================================
-// PREVIEW SHIM — lets you open this file directly in a browser to
-// see the design before deploying to Apps Script. When this runs
-// for real inside Apps Script, google.script.run exists and every
-// call below goes to Code.gs as normal; this block does nothing.
+// API CONFIG — paste your deployed Apps Script Web App URL here after
+// you deploy Code_API.gs (Deploy > New deployment > Web app). It must
+// end in /exec. Until you set this, the app runs in PREVIEW MODE with
+// fake sample data so you can still see/test the design.
 // ================================================================
-const IS_PREVIEW = !(window.google && google.script && google.script.run);
+const API_BASE_URL = 'https://script.google.com/a/macros/niterragroup.com/s/AKfycbxtIMpZqMdbRrPEfR1fXwyBReKXSIj1yhonhdtloeZI01SkiRy1eghY5QbHerMLX_6jKw/exec';
+const IS_PREVIEW = API_BASE_URL.indexOf('PASTE_YOUR') !== -1;
 
 const MOCK_STEP_DEFS = [
   { key:'binder_dissolution', title:'Binder dissolution',
@@ -471,7 +497,9 @@ let MOCK_LOTS = {};
 function mockCall(fnName, payload) {
   return new Promise(function (resolve, reject) {
     setTimeout(function () {
-      if (fnName === 'getBootstrap') {
+      if (fnName === 'checkTeamPin') {
+        resolve({ ok: true }); // preview mode: any PIN works
+      } else if (fnName === 'getBootstrap') {
         const wip = Object.keys(MOCK_LOTS).filter(function (id) { return MOCK_LOTS[id].Status === 'In Progress'; })
           .map(function (id) { return { id: id, lotNo: MOCK_LOTS[id].LotNo, currentStepIndex: MOCK_LOTS[id].CurrentStepIndex }; });
         resolve({ operators: MOCK_OPERATORS, stepDefs: MOCK_STEP_DEFS, inProgressLots: wip, lotPrefix: 'TI-' });
@@ -544,11 +572,21 @@ function gsRun(fnName, arg, timeoutMs) {
       if (IS_PREVIEW) {
         mockCall(fnName, arg).then(wrapSuccess, wrapFail);
       } else {
-        try {
-          google.script.run.withSuccessHandler(wrapSuccess).withFailureHandler(wrapFail)[fnName](arg);
-        } catch (e) {
-          wrapFail({ message: 'ส่งข้อมูลไม่สำเร็จ (' + e.message + ') — ข้อมูลอาจใหญ่เกินไป ลองถ่ายรูปใหม่หรือรีเฟรชหน้า' });
-        }
+        fetch(API_BASE_URL, {
+          method: 'POST',
+          // Deliberately text/plain, not application/json — see the API_BASE_URL
+          // comment above. This avoids a CORS preflight that Apps Script can't answer.
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ fn: fnName, arg: arg })
+        }).then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        }).then(function (data) {
+          if (data && data.error) { wrapFail({ message: data.error }); return; }
+          wrapSuccess(data ? data.result : undefined);
+        }).catch(function (e) {
+          wrapFail({ message: 'เชื่อมต่อ API ไม่ได้: ' + e.message + ' — เช็คว่า API_BASE_URL ตั้งค่าถูกต้อง และ deploy Apps Script เป็น Web App แล้ว' });
+        });
       }
     }
   };
@@ -586,6 +624,39 @@ window.addEventListener('unhandledrejection', function (e) {
 });
 
 window.onload = function () {
+  const savedPin = sessionStorage.getItem('teamPin');
+  if (savedPin) {
+    verifyAndEnter(savedPin, true);
+  } else {
+    document.getElementById('pinInput').focus();
+  }
+};
+
+function submitPin() {
+  const pin = document.getElementById('pinInput').value.trim();
+  if (!pin) { toast('กรุณากรอกรหัส PIN'); return; }
+  verifyAndEnter(pin, false);
+}
+
+function verifyAndEnter(pin, silent) {
+  gsRun('checkTeamPin', pin).withSuccessHandler(function (res) {
+    if (res && res.ok) {
+      sessionStorage.setItem('teamPin', pin);
+      document.getElementById('pinGateScreen').classList.add('hidden');
+      document.getElementById('shell').classList.remove('hidden');
+      bootApp();
+    } else if (!silent) {
+      toast('รหัส PIN ไม่ถูกต้อง');
+    } else {
+      sessionStorage.removeItem('teamPin');
+      document.getElementById('pinInput').focus();
+    }
+  }).withFailureHandler(function (err) {
+    if (!silent) toast('ตรวจสอบ PIN ไม่สำเร็จ: ' + (err.message || err));
+  }).run();
+}
+
+function bootApp() {
   try {
     if (IS_PREVIEW) showPreviewBanner();
     gsRun('getBootstrap').withSuccessHandler(onBoot).withFailureHandler(function (err) {
@@ -594,7 +665,7 @@ window.onload = function () {
   } catch (e) {
     showFatalError('เกิดข้อผิดพลาดตอนเริ่มหน้า: ' + e.message);
   }
-};
+}
 
 function showFatalError(msg) {
   let box = document.getElementById('fatalErrBox');
@@ -778,7 +849,7 @@ function renderStep() {
         (isScan
           ? '<div class="scanrow">' +
               '<input type="text" id="f_' + f.id + '" placeholder="แตะปุ่มสแกน หรือพิมพ์เอง">' +
-              '<button type="button" class="scan-btn" onclick="openScanGuide(\'scanfile_' + f.id + '\')">📷 สแกน</button>' +
+              '<button type="button" class="scan-btn" onclick="openScanGuide(\'scanfile_' + f.id + '\', \'f_' + f.id + '\')">📷 สแกน</button>' +
               '<input type="file" accept="image/*" id="scanfile_' + f.id + '" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">' +
             '</div>' +
             '<div style="font-size:11.5px;color:var(--steel-500);margin-top:4px;">💡 ให้บาร์โค้ด/QR เต็มเฟรม ไม่เอียง แสงสม่ำเสมอ ไม่มีแสงสะท้อน</div>'
@@ -856,9 +927,59 @@ function loadScriptOnce(url, cb) {
 // is not blocked, since it hands off to the OS camera app rather than calling
 // getUserMedia), then decoding that photo client-side with html5-qrcode's scanFile()
 // API — which only processes image data and never touches the camera API.
+// ---------- LIVE CAMERA SCAN (primary method now that we're off Apps Script) ----------
+let _liveScanner = null;
+let _liveScanFieldId = null;
+let _liveScanInputId = null;
+
+function openScanGuide(inputId, fieldId) {
+  _liveScanFieldId = fieldId;
+  _liveScanInputId = inputId;
+  document.getElementById('liveScanModalBg').style.display = 'flex';
+  document.getElementById('liveScanRegion').innerHTML = '<div style="color:#fff;padding:60px 16px;text-align:center;font-size:13.5px;">กำลังเปิดกล้อง...</div>';
+  loadScriptOnce('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js', function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      document.getElementById('liveScanRegion').innerHTML = '<div style="color:#fff;padding:30px 16px;text-align:center;font-size:13.5px;">เบราว์เซอร์นี้ไม่รองรับกล้องสด<br>กด "ถ่ายรูปแทน" ด้านล่างได้เลย</div>';
+      return;
+    }
+    document.getElementById('liveScanRegion').innerHTML = '';
+    try {
+      _liveScanner = new Html5Qrcode('liveScanRegion');
+      _liveScanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 150 } },
+        function (decodedText) {
+          applyScanResult(_liveScanFieldId, decodedText);
+          closeLiveScan();
+        },
+        function () { /* per-frame miss while aiming — normal, ignore */ }
+      ).catch(function (err) {
+        document.getElementById('liveScanRegion').innerHTML =
+          '<div style="color:#fff;padding:20px 16px;text-align:center;font-size:13px;">เปิดกล้องสดไม่ได้<br>(' + err + ')<br><br>กด "ถ่ายรูปแทน" ด้านล่างได้เลย</div>';
+      });
+    } catch (e) {
+      document.getElementById('liveScanRegion').innerHTML = '<div style="color:#fff;padding:30px 16px;text-align:center;">โหลดตัวสแกนไม่สำเร็จ — กด "ถ่ายรูปแทน"</div>';
+    }
+  });
+}
+
+function closeLiveScan() {
+  document.getElementById('liveScanModalBg').style.display = 'none';
+  if (_liveScanner) {
+    const s = _liveScanner;
+    _liveScanner = null;
+    s.stop().then(function () { s.clear(); }).catch(function () {});
+  }
+}
+
+function switchToPhotoMode() {
+  closeLiveScan();
+  openScanGuidePhoto(_liveScanInputId);
+}
+
 let _html5QrFileScanner = null;
 
-function openScanGuide(inputId) {
+function openScanGuidePhoto(inputId) {
   document.getElementById('scanGuideGoLabel').setAttribute('for', inputId);
   document.getElementById('scanGuideModalBg').style.display = 'flex';
 }
