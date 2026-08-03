@@ -1,298 +1,204 @@
 <!DOCTYPE html>
-<html lang="th">
+<html>
 <head>
 <base target="_top">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Routine Card - Live Camera Scanner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-
 <style>
-  :root {
-    /* Ink & paper base */
-    --ink-900: #1C2833;
-    --ink-700: #2C3E50;
-    --ink-500: #4A607A;
-    --steel-500: #7F8C8D;
-    --steel-300: #BDC3C7;
-    --steel-200: #E5E8E8;
-    --steel-100: #F4F6F6;
-    --paper-0: #F7FAFC;
-    --paper-50: #EDF2F7;
-    --panel: #FFFFFF;
+  :root{
+    /* -- Ink & paper (cool, calm undertone to match the pastel accents) -- */
+    --ink-900:#1E2A3A; --ink-700:#34495C; --ink-500:#4A6478;
+    --steel-500:#7E93A3; --steel-300:#B7C8D1; --steel-200:#DCE6EA; --steel-100:#EDF2F4;
+    --paper-0:#FAFCFD; --paper-50:#F1F6F8; --panel:#FFFFFF;
 
-    /* Pastel palette accents */
-    --pastel-blue: #AFD7F6;
-    --pastel-pink: #FEB9D0;
-    --pastel-pink-light: #FBCCE0;
-    --pastel-teal: #96CFCF;
+    /* -- Pastel palette (as supplied): blue #AFD7F6 / pink #FEB9D0 / light pink #FBCCE0 / teal #96CFCF -- */
+    --pastel-blue:#AFD7F6; --pastel-pink:#FEB9D0; --pastel-pink-light:#FBCCE0; --pastel-teal:#96CFCF;
 
-    /* Signal & Highlights */
-    --signal-500: #FEB9D0;
-    --signal-100: #FBCCE0;
-    --signal-700: #A83D6E;
+    /* -- Signal (current-step highlight) -- pastel pink, with a darker rose for text/icon contrast -- */
+    --signal-500:#FEB9D0; --signal-100:#FBCCE0; --signal-700:#A83D6E;
 
-    /* Brand & Success colors */
-    --brand-600: #2F8480;
-    --brand-700: #1F5F5C;
-    --ok-600: #2F8480;
-    --ok-100: #DCF2F0;
+    /* -- Brand (primary buttons / done state) -- deepened from the pastel teal for AA contrast with white text -- */
+    --brand-600:#2F8480; --brand-700:#1F5F5C;
+    --ok-600:#2F8480; --ok-100:#DCF2F0;
 
-    /* Alert / Warning */
-    --alert-600: #B23A2E;
-    --alert-100: #F6DFDB;
+    /* -- Alert stays true red regardless of theme — spec-violation warnings must never look decorative -- */
+    --alert-600:#B23A2E; --alert-100:#F6DFDB;
 
-    --radius: 14px;
-    --radius-sm: 9px;
-    --font-ui: 'Noto Sans Thai', -apple-system, sans-serif;
-    --font-mono: 'IBM Plex Mono', monospace;
+    --radius:14px; --radius-sm:9px;
+    --font-ui:'Noto Sans Thai',-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
   }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--paper-0);color:var(--ink-900);
+    font-family:var(--font-ui);font-size:16px;height:100%;
+    -webkit-font-smoothing:antialiased;}
+  button,select,input{font-family:inherit;}
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body {
-    margin: 0; padding: 0; background: var(--paper-0); color: var(--ink-900);
-    font-family: var(--font-ui); font-size: 16px; height: 100%;
-    -webkit-font-smoothing: antialiased;
-  }
-  button, select, input { font-family: inherit; }
+  /* ============ SHELL ============ */
+  #shell{max-width:920px;margin:0 auto;min-height:100%;
+    display:flex;flex-direction:column;}
+  .topbar{display:flex;align-items:baseline;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:1px solid var(--steel-200);}
+  .topbar h1{font-size:17px;font-weight:800;letter-spacing:.01em;margin:0;color:var(--ink-900);}
+  .topbar .plant{font-size:11px;font-weight:600;color:var(--steel-500);letter-spacing:.08em;
+    text-transform:uppercase;margin-top:2px;}
+  .topbar .lotchip{font-family:var(--font-mono);font-size:14px;font-weight:600;
+    background:var(--brand-600);color:#fff;padding:5px 12px;border-radius:20px;
+    letter-spacing:.03em;}
+  .topbar .lotchip.empty{display:none;}
 
-  /* Shell Layout */
-  #shell { max-width: 920px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
-  .topbar {
-    display: flex; align-items: baseline; justify-content: space-between;
-    padding: 18px 20px 14px; border-bottom: 1px solid var(--steel-200); background: #fff;
-    position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-  }
-  .topbar h1 { font-size: 18px; font-weight: 800; margin: 0; color: var(--ink-900); }
-  .topbar .plant { font-size: 11px; font-weight: 600; color: var(--steel-500); text-transform: uppercase; margin-top: 2px; }
-  .topbar .lotchip {
-    font-family: var(--font-mono); font-size: 14px; font-weight: 600;
-    background: var(--brand-600); color: #fff; padding: 5px 12px; border-radius: 20px;
-  }
-  .topbar .lotchip.empty { display: none; }
+  .main{flex:1;display:flex;gap:0;padding:16px;}
 
-  .main { flex: 1; display: flex; gap: 0; padding: 16px; }
+  /* ============ PROCESS-FLOW RAIL ============ */
+  .rail{width:64px;flex-shrink:0;padding-top:6px;display:flex;flex-direction:column;
+    align-items:center;}
+  .rail .node-wrap{position:relative;display:flex;flex-direction:column;align-items:center;}
+  .rail .pipe{width:3px;flex:1;min-height:22px;background:var(--steel-200);}
+  .rail .pipe.done{background:var(--ok-600);}
+  .node{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;
+    justify-content:center;background:var(--panel);border:2.5px solid var(--steel-300);
+    flex-shrink:0;transition:all .25s ease;position:relative;z-index:1;}
+  .node svg{width:19px;height:19px;stroke:var(--steel-500);fill:none;stroke-width:1.7;}
+  .node.done{background:var(--ok-600);border-color:var(--ok-600);}
+  .node.done svg{stroke:#fff;}
+  .node.current{background:var(--signal-100);border-color:var(--signal-500);
+    box-shadow:0 0 0 5px var(--signal-100);animation:pulse 1.8s ease-in-out infinite;}
+  .node.current svg{stroke:var(--signal-700);}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 5px var(--signal-100);}50%{box-shadow:0 0 0 8px var(--signal-100);}}
+  @media (prefers-reduced-motion:reduce){.node.current{animation:none;}}
 
-  /* Process Rail */
-  .rail { width: 64px; flex-shrink: 0; padding-top: 6px; display: flex; flex-direction: column; align-items: center; }
-  .rail .node-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
-  .rail .pipe { width: 3px; flex: 1; min-height: 22px; background: var(--steel-200); }
-  .rail .pipe.done { background: var(--ok-600); }
-  .node {
-    width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; background: var(--panel); border: 2.5px solid var(--steel-300);
-    flex-shrink: 0; transition: all .25s ease; position: relative; z-index: 1;
-  }
-  .node svg { width: 19px; height: 19px; stroke: var(--steel-500); fill: none; stroke-width: 1.7; }
-  .node.done { background: var(--ok-600); border-color: var(--ok-600); }
-  .node.done svg { stroke: #fff; }
-  .node.current {
-    background: var(--signal-100); border-color: var(--signal-500);
-    box-shadow: 0 0 0 5px var(--signal-100); animation: pulse 1.8s ease-in-out infinite;
-  }
-  .node.current svg { stroke: var(--signal-700); }
-  @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 5px var(--signal-100); } 50% { box-shadow: 0 0 0 8px var(--signal-100); } }
+  /* mini rail preview on home screen (static, non-interactive) */
+  .rail-preview{display:flex;flex-direction:column;gap:0;margin:18px 0 6px;}
+  .rail-preview .r-item{display:flex;align-items:center;gap:12px;}
+  .rail-preview .r-node{width:34px;height:34px;border-radius:50%;background:var(--pastel-blue);
+    border:2px solid #8FC3EA;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .rail-preview .r-node svg{width:16px;height:16px;stroke:#1E5178;fill:none;stroke-width:1.7;}
+  .rail-preview .r-pipe{width:2px;height:14px;background:var(--pastel-blue);margin-left:17px;}
+  .rail-preview .r-label{font-size:13.5px;color:var(--ink-500);font-weight:500;padding:7px 0;}
 
-  .rail-preview { display: flex; flex-direction: column; gap: 0; margin: 18px 0 6px; }
-  .rail-preview .r-item { display: flex; align-items: center; gap: 12px; }
-  .rail-preview .r-node {
-    width: 34px; height: 34px; border-radius: 50%; background: var(--pastel-blue);
-    border: 2px solid #8FC3EA; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .rail-preview .r-node svg { width: 16px; height: 16px; stroke: #1E5178; fill: none; stroke-width: 1.7; }
-  .rail-preview .r-pipe { width: 2px; height: 14px; background: var(--pastel-blue); margin-left: 17px; }
-  .rail-preview .r-label { font-size: 13.5px; color: var(--ink-500); font-weight: 500; padding: 7px 0; }
+  /* ============ CONTENT COLUMN ============ */
+  .content{flex:1;min-width:0;padding-left:16px;}
 
-  /* Content Column */
-  .content { flex: 1; min-width: 0; padding-left: 16px; }
-  .panel {
-    background: var(--panel); border: 1px solid var(--steel-200); border-radius: var(--radius);
-    padding: 20px; position: relative; box-shadow: 0 2px 8px rgba(18, 35, 46, .04);
-  }
-  .panel.riveted::before, .panel.riveted::after {
-    content: ''; position: absolute; top: 14px; width: 6px; height: 6px; border-radius: 50%; background: var(--steel-300);
-  }
-  .panel.riveted::before { left: 14px; }
-  .panel.riveted::after { right: 14px; }
+  .panel{background:var(--panel);border:1px solid var(--steel-200);border-radius:var(--radius);
+    padding:20px 20px 22px;position:relative;box-shadow:0 1px 2px rgba(18,35,46,.04);}
+  /* rivet accents on panel header, referencing bolted equipment plates */
+  .panel.riveted::before,.panel.riveted::after{content:'';position:absolute;top:14px;
+    width:5px;height:5px;border-radius:50%;background:var(--steel-200);}
+  .panel.riveted::before{left:14px;} .panel.riveted::after{right:14px;}
 
-  .eyebrow { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--brand-600); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
-  .step-title { font-size: 21px; font-weight: 800; color: var(--ink-900); margin: 0; }
-  .step-meta { font-family: var(--font-mono); font-size: 12.5px; color: var(--steel-500); margin-top: 3px; }
+  .eyebrow{font-family:var(--font-mono);font-size:11.5px;font-weight:600;color:var(--signal-700);
+    letter-spacing:.09em;text-transform:uppercase;margin-bottom:4px;}
+  .step-title{font-size:21px;font-weight:800;color:var(--ink-900);letter-spacing:-.01em;margin:0;}
+  .step-meta{font-family:var(--font-mono);font-size:12.5px;color:var(--steel-500);margin-top:3px;}
 
-  label { display: block; font-weight: 600; margin: 16px 0 6px; font-size: 14.5px; color: var(--ink-700); }
-  .standard {
-    font-family: var(--font-mono); font-size: 12.5px; color: var(--ink-700);
-    background: var(--paper-50); border-left: 3px solid var(--signal-500);
-    padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; line-height: 1.5;
-  }
-  .standard b { color: var(--signal-700); font-weight: 600; }
+  label{display:block;font-weight:600;margin:16px 0 6px;font-size:14.5px;color:var(--ink-700);}
+  .standard{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-700);
+    background:var(--paper-50);border-left:3px solid var(--signal-500);
+    padding:7px 10px;border-radius:6px;margin-bottom:7px;line-height:1.5;}
+  .standard b{color:var(--signal-700);font-weight:600;}
 
-  /* Scan row layout - Input takes max width, Scan button sits beside it */
-  .scan-row {
-    display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 4px;
-  }
-  .scan-row input[type=text] {
-    flex: 1; min-width: 0; width: 100%;
-  }
+  input[type=text],input[type=number],input[type=datetime-local],select{
+    width:100%;padding:13px 14px;font-size:16.5px;border:1.5px solid var(--steel-200);
+    border-radius:var(--radius-sm);background:var(--paper-0);color:var(--ink-900);
+    font-family:var(--font-mono);}
+  select{font-family:var(--font-ui);}
+  input::placeholder{color:var(--steel-300);font-family:var(--font-ui);}
+  input:focus,select:focus{outline:none;border-color:var(--signal-500);
+    box-shadow:0 0 0 3px var(--signal-100);}
+  input.field-error{border-color:var(--alert-600);background:var(--alert-100);}
+  .spec-err{font-size:12.5px;color:var(--alert-600);font-weight:600;margin-top:4px;}
 
-  /* Form Inputs */
-  input[type=text], input[type=number], input[type=datetime-local], select {
-    width: 100%; padding: 12px 14px; font-size: 16px; border: 1.5px solid var(--steel-200);
-    border-radius: var(--radius-sm); background: var(--paper-0); color: var(--ink-900);
-    font-family: var(--font-mono); transition: all 0.15s ease; min-height: 48px;
-  }
-  select { font-family: var(--font-ui); }
-  input::placeholder { color: var(--steel-300); font-family: var(--font-ui); }
-  input:focus, select:focus { outline: none; border-color: var(--brand-600); box-shadow: 0 0 0 3px rgba(47, 132, 128, 0.15); }
-  input.field-error { border-color: var(--alert-600); background: var(--alert-100); }
-  input.scan-flash { border-color: var(--ok-600); background: var(--ok-100); animation: flashGreen 1.2s ease; }
-  @keyframes flashGreen { 0% { background: var(--ok-100); } 100% { background: var(--paper-0); } }
+  .photo-box{border:1.5px dashed var(--steel-300);border-radius:var(--radius-sm);
+    background:var(--paper-0);padding:12px;text-align:center;}
+  .photo-box img{max-width:100%;max-height:180px;border-radius:8px;display:block;margin:0 auto 8px;}
+  .photo-btn{display:inline-flex;align-items:center;gap:6px;background:var(--brand-600);color:#fff;
+    padding:12px 18px;border-radius:var(--radius-sm);font-weight:700;font-size:15px;cursor:pointer;
+    box-shadow:0 1px 2px rgba(30,42,58,.30), 0 1px 3px 1px rgba(30,42,58,.15);
+    transition:transform .08s ease, box-shadow .08s ease;}
+  .photo-btn:active{transform:translateY(1px);box-shadow:0 1px 1px rgba(30,42,58,.24);}
+  .photo-status{font-size:12.5px;color:var(--steel-500);margin-top:6px;}
+  .photo-status.ok{color:var(--ok-600);font-weight:600;}
 
-  .spec-err { font-size: 12.5px; color: var(--alert-600); font-weight: 600; margin-top: 5px; }
+  .scanrow{display:flex;gap:8px;align-items:stretch;}
+  .scanrow input{flex:1 1 0;min-width:0;width:auto;margin-top:0;}
+  .scanrow .scan-btn{flex:0 0 auto;width:auto;margin-top:0;}
 
-  /* Scan Button */
-  .scan-btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 0 18px; min-height: 48px; height: 48px; width: auto; flex-shrink: 0; margin-top: 0 !important;
-    background: linear-gradient(135deg, var(--pastel-blue), #8AC2EC);
-    color: #113854; border-radius: var(--radius-sm); font-weight: 700;
-    font-size: 15px; white-space: nowrap; cursor: pointer; border: none;
-    box-shadow: 0 2px 6px rgba(175, 215, 246, 0.5);
-    transition: all 0.15s ease;
-  }
-  .scan-btn:active { transform: scale(0.97); }
+  .scan-btn{display:inline-flex;align-items:center;justify-content:center;padding:0 16px;
+    background:var(--brand-600);color:#fff;border-radius:var(--radius-sm);font-weight:700;
+    font-size:14.5px;white-space:nowrap;cursor:pointer;
+    box-shadow:0 1px 2px rgba(30,42,58,.30), 0 1px 3px 1px rgba(30,42,58,.15);
+    transition:transform .08s ease, box-shadow .08s ease;}
+  .scan-btn:active{transform:translateY(1px);box-shadow:0 1px 1px rgba(30,42,58,.24);}
 
-  .photo-box { border: 1.5px dashed var(--steel-300); border-radius: var(--radius-sm); background: var(--paper-0); padding: 14px; text-align: center; }
-  .photo-box img { max-width: 100%; max-height: 180px; border-radius: 8px; display: block; margin: 0 auto 8px; }
-  .photo-btn {
-    display: inline-flex; align-items: center; gap: 6px; background: var(--brand-600); color: #fff;
-    padding: 12px 20px; border-radius: var(--radius-sm); font-weight: 700; font-size: 15px; cursor: pointer;
-    box-shadow: 0 2px 6px rgba(47, 132, 128, 0.25);
-  }
-  .photo-status { font-size: 13px; color: var(--steel-500); margin-top: 6px; }
-  .photo-status.ok { color: var(--ok-600); font-weight: 600; }
+  .checkrow{display:flex;align-items:center;gap:11px;padding:13px 14px;
+    border:1.5px solid var(--steel-200);border-radius:var(--radius-sm);background:var(--paper-0);}
+  .checkrow input{width:24px;height:24px;accent-color:var(--signal-500);flex-shrink:0;}
+  .checkrow span{font-size:15px;color:var(--ink-700);}
+  .unit{color:var(--steel-500);font-weight:500;font-size:13px;font-family:var(--font-mono);}
 
-  .checkrow { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid var(--steel-200); border-radius: var(--radius-sm); background: var(--paper-0); min-height: 48px; }
-  .checkrow input { width: 22px; height: 22px; accent-color: var(--brand-600); flex-shrink: 0; }
-  .checkrow span { font-size: 15px; color: var(--ink-700); }
-  .unit { color: var(--steel-500); font-weight: 500; font-size: 13px; font-family: var(--font-mono); }
+  /* ============ BUTTONS (Material-style Elevated Buttons) ============ */
+  button, .btn-like{font-size:16px;padding:15px 20px;border-radius:var(--radius-sm);border:none;
+    font-weight:700;cursor:pointer;width:100%;margin-top:10px;-webkit-appearance:none;
+    transition:transform .08s ease, box-shadow .08s ease;letter-spacing:.01em;
+    box-shadow:0 1px 2px rgba(30,42,58,.30), 0 1px 3px 1px rgba(30,42,58,.15);
+    box-sizing:border-box;display:block;text-align:center;}
+  button:active, .btn-like:active{transform:translateY(1px);box-shadow:0 1px 1px rgba(30,42,58,.24);}
+  .btn-primary{background:var(--brand-600);color:#fff;}
+  .btn-secondary{background:var(--panel);color:var(--ink-700);}
+  .btn-danger{background:var(--alert-600);color:#fff;}
+  .btn-ghost{background:var(--panel);color:var(--steel-500);font-weight:600;font-size:14.5px;padding:12px;}
+  button:disabled{opacity:.4;box-shadow:none;transform:none;}
+  .row2{display:flex;gap:10px;}
+  .row2>button{flex:1;}
 
-  /* Standard Action Buttons */
-  button, .btn-like {
-    font-size: 16px; padding: 14px 20px; border-radius: var(--radius-sm); border: none;
-    font-weight: 700; cursor: pointer; width: 100%; margin-top: 12px; transition: all .15s ease;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: block; text-align: center; box-sizing: border-box;
-  }
-  button:active, .btn-like:active { transform: translateY(1px); }
-  .btn-primary { background: var(--brand-600); color: #fff; }
-  .btn-secondary { background: var(--paper-50); color: var(--ink-700); }
-  .btn-danger { background: var(--alert-600); color: #fff; }
-  .btn-ghost { background: transparent; color: var(--steel-500); font-weight: 600; font-size: 14px; padding: 10px; box-shadow: none; }
-  button:disabled { opacity: .4; transform: none; box-shadow: none; }
-  .row2 { display: flex; gap: 10px; }
-  .row2 > button { flex: 1; }
+  /* ============ SIGNATURE PAD ============ */
+  .sig-wrap{border:1.5px dashed var(--steel-300);border-radius:var(--radius-sm);
+    background:var(--paper-0);overflow:hidden;position:relative;}
+  .sig-wrap::before{content:'✕ ลงชื่อในกรอบนี้';position:absolute;top:8px;left:10px;
+    font-size:11px;color:var(--steel-300);font-weight:600;letter-spacing:.03em;pointer-events:none;}
+  canvas{width:100%;height:140px;display:block;touch-action:none;background:transparent;}
+  .sig-actions{display:flex;justify-content:space-between;padding:7px 2px 0;font-size:12.5px;color:var(--steel-500);}
+  .sig-actions span{cursor:pointer;font-weight:600;}
+  .sig-actions .clear{color:var(--alert-600);}
+  .sig-actions .status.ok{color:var(--ok-600);}
 
-  /* Signature Pad */
-  .sig-wrap { border: 1.5px dashed var(--steel-300); border-radius: var(--radius-sm); background: var(--paper-0); overflow: hidden; position: relative; }
-  .sig-wrap::before { content: '✕ ลงชื่อในกรอบนี้'; position: absolute; top: 8px; left: 10px; font-size: 11px; color: var(--steel-300); font-weight: 600; pointer-events: none; }
-  canvas { width: 100%; height: 140px; display: block; touch-action: none; background: transparent; }
-  .sig-actions { display: flex; justify-content: space-between; padding: 6px 2px 0; font-size: 12.5px; color: var(--steel-500); }
-  .sig-actions span { cursor: pointer; font-weight: 600; }
-  .sig-actions .clear { color: var(--alert-600); }
-  .sig-actions .status.ok { color: var(--ok-600); }
+  /* ============ LOT LIST ============ */
+  .lotlist{border:1px solid var(--steel-200);border-radius:var(--radius-sm);overflow:hidden;margin-top:10px;}
+  .lotlist .item{padding:14px 15px;border-bottom:1px solid var(--steel-200);
+    display:flex;justify-content:space-between;align-items:center;background:var(--panel);cursor:pointer;}
+  .lotlist .item:active{background:var(--paper-50);}
+  .lotlist .item:last-child{border-bottom:none;}
+  .lotlist .lotname{font-family:var(--font-mono);font-weight:600;font-size:15px;}
+  .badge{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:20px;
+    background:var(--steel-100);color:var(--ink-700);font-family:var(--font-mono);}
+  .badge.wip{background:var(--signal-100);color:var(--signal-700);}
 
-  /* Lot List */
-  .lotlist { border: 1px solid var(--steel-200); border-radius: var(--radius-sm); overflow: hidden; margin-top: 10px; }
-  .lotlist .item { padding: 14px 15px; border-bottom: 1px solid var(--steel-200); display: flex; justify-content: space-between; align-items: center; background: var(--panel); cursor: pointer; }
-  .lotlist .item:active { background: var(--paper-50); }
-  .lotlist .item:last-child { border-bottom: none; }
-  .lotlist .lotname { font-family: var(--font-mono); font-weight: 600; font-size: 15px; }
-  .badge { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: var(--steel-100); color: var(--ink-700); font-family: var(--font-mono); }
-  .badge.wip { background: var(--signal-100); color: var(--signal-700); }
+  /* ============ MISC ============ */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+    background:var(--ink-900);color:var(--paper-0);padding:13px 22px;border-radius:12px;
+    font-size:14.5px;max-width:90%;text-align:center;z-index:999;display:none;
+    box-shadow:0 6px 18px rgba(18,35,46,.25);}
+  .modal-bg{position:fixed;inset:0;background:rgba(18,35,46,.55);display:none;
+    align-items:center;justify-content:center;z-index:998;padding:20px;}
+  .modal{background:var(--panel);border-radius:var(--radius);padding:22px;max-width:420px;width:100%;}
+  .modal h3{margin:0 0 4px;font-size:17px;color:var(--alert-600);}
+  .modal .sub2{font-size:13px;color:var(--steel-500);margin-bottom:14px;}
+  .hidden{display:none !important;}
+  .divider{height:1px;background:var(--steel-200);margin:18px 0;}
+  .success-line{color:var(--ok-600);font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;}
 
-  /* Live Camera Modal Viewfinder */
-  .camera-modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000;
-    display: none; flex-direction: column; align-items: center; justify-content: space-between;
-    padding: 20px 16px;
-  }
-  .camera-header {
-    width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; color: #fff;
-  }
-  .camera-header h3 { margin: 0; font-size: 17px; font-weight: 700; }
-  .camera-close-btn {
-    background: rgba(255,255,255,0.2); border: none; color: #fff; border-radius: 50%;
-    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-    font-size: 18px; cursor: pointer;
-  }
-  .viewfinder-wrap {
-    position: relative; width: 100%; max-width: 450px; height: 320px;
-    border-radius: 18px; overflow: hidden; background: #000;
-    box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
-  }
-  .viewfinder-wrap video {
-    width: 100%; height: 100%; object-fit: cover;
-  }
-  /* Target Scope Reticle Box (Yellow/Green Target Highlight) */
-  .target-scope {
-    position: absolute; width: 240px; height: 160px;
-    border: 2.5px dashed rgba(255,255,255,0.6); border-radius: 12px;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
-    pointer-events: none; transition: all 0.2s ease;
-  }
-  .target-scope::before, .target-scope::after {
-    content: ''; position: absolute; width: 24px; height: 24px;
-    border-color: #FFD600; border-style: solid; border-width: 0;
-  }
-  .target-scope::before { top: -2px; left: -2px; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 10px; }
-  .target-scope::after { bottom: -2px; right: -2px; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 10px; }
-  
-  .target-laser {
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, #FFD600, transparent);
-    animation: scanLaser 2s linear infinite; box-shadow: 0 0 8px #FFD600;
-  }
-  @keyframes scanLaser { 0% { top: 0; } 50% { top: 100%; } 100% { top: 0; } }
-
-  .target-overlay-box {
-    position: absolute; border: 3px solid #FFD600; background: rgba(255,214,0,0.2);
-    border-radius: 6px; pointer-events: none; transition: all 0.1s ease;
-  }
-
-  .camera-controls {
-    width: 100%; max-width: 450px; display: flex; gap: 12px; justify-content: center;
-  }
-  .cam-btn {
-    background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3);
-    padding: 12px 18px; border-radius: 25px; font-weight: 600; font-size: 14px;
-    display: inline-flex; align-items: center; gap: 6px; cursor: pointer; backdrop-filter: blur(8px);
-  }
-
-  /* Toast & Modals */
-  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--ink-900); color: #fff; padding: 12px 22px; border-radius: 12px; font-size: 14.5px; max-width: 90%; text-align: center; z-index: 999; display: none; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
-  .modal-bg { position: fixed; inset: 0; background: rgba(18, 35, 46, .65); display: none; align-items: center; justify-content: center; z-index: 998; padding: 20px; }
-  .modal { background: var(--panel); border-radius: var(--radius); padding: 22px; max-width: 420px; width: 100%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
-  .modal h3 { margin: 0 0 4px; font-size: 17px; color: var(--ink-900); }
-  .modal .sub2 { font-size: 13px; color: var(--steel-500); margin-bottom: 14px; }
-  .hidden { display: none !important; }
-  .divider { height: 1px; background: var(--steel-200); margin: 18px 0; }
-  .success-line { color: var(--ok-600); font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
-
-  @media (max-width: 600px) {
-    .rail { width: 52px; }
-    .node { width: 34px; height: 34px; }
-    .content { padding-left: 10px; }
-    .panel { padding: 16px; }
+  @media (max-width:600px){
+    .rail{width:52px;}
+    .node{width:34px;height:34px;} .node svg{width:16px;height:16px;}
+    .content{padding-left:12px;}
+    .panel{padding:16px 15px 18px;}
+    .step-title{font-size:19px;}
   }
 </style>
-
-<!-- ZXing Decoder fallback library -->
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 </head>
 <body>
-
 <div id="shell">
   <div class="topbar">
     <div>
@@ -303,10 +209,11 @@
   </div>
 
   <div class="main">
+    <!-- rail only shown during wizard -->
     <div class="rail hidden" id="rail"></div>
 
     <div class="content">
-      <!-- HOME SCREEN -->
+      <!-- SCREEN: HOME -->
       <div id="screen-home">
         <div class="panel riveted">
           <div class="eyebrow">Station 00 · Lot intake</div>
@@ -318,7 +225,6 @@
             <div style="font-family:var(--font-mono);font-weight:700;color:var(--steel-500);font-size:16.5px;">TI-</div>
             <input type="text" id="lotSuffix" placeholder="เช่น 1256" inputmode="numeric">
           </div>
-
           <label>ผู้เริ่มบันทึก</label>
           <select id="homeOperator"></select>
           <button class="btn-primary" onclick="startNewLot()">เริ่ม Lot ใหม่</button>
@@ -337,7 +243,7 @@
         </div>
       </div>
 
-      <!-- WIZARD STEP SCREEN -->
+      <!-- SCREEN: WIZARD STEP -->
       <div id="screen-step" class="hidden">
         <div class="panel riveted">
           <div class="eyebrow" id="stepEyebrow"></div>
@@ -353,10 +259,7 @@
 
           <label>ลายเซ็นยืนยัน</label>
           <div class="sig-wrap"><canvas id="sigPad"></canvas></div>
-          <div class="sig-actions">
-            <span class="clear" onclick="clearSig()">ล้างลายเซ็น</span>
-            <span id="sigStatus">ยังไม่ได้เซ็น</span>
-          </div>
+          <div class="sig-actions"><span class="clear" onclick="clearSig()">ล้างลายเซ็น</span><span id="sigStatus">ยังไม่ได้เซ็น</span></div>
 
           <button class="btn-primary" id="saveStepBtn" onclick="submitStep()">บันทึกและไปขั้นต่อไป →</button>
           <button class="btn-ghost" onclick="openAdminModal()">🔒 ผู้ดูแลระบบ: ข้ามขั้นตอนนี้</button>
@@ -364,7 +267,7 @@
         </div>
       </div>
 
-      <!-- FINAL APPROVAL SCREEN -->
+      <!-- SCREEN: FINAL APPROVAL -->
       <div id="screen-final" class="hidden">
         <div class="panel riveted">
           <div class="eyebrow">Station 08 · Sign-off</div>
@@ -387,16 +290,14 @@
         </div>
       </div>
 
-      <!-- DONE SCREEN -->
+      <!-- SCREEN: DONE -->
       <div id="screen-done" class="hidden">
         <div class="panel riveted" style="text-align:center;">
           <div style="font-size:40px;margin-bottom:4px;">✔</div>
           <div class="step-title">เสร็จสมบูรณ์</div>
           <p style="color:var(--steel-500);font-family:var(--font-mono);" id="doneLotNo"></p>
           <button class="btn-primary" onclick="exportPdfNow()">Export PDF</button>
-          <p id="folderLinkWrap" class="hidden" style="font-size:13.5px;">
-            <a id="folderLink" href="#" target="_blank" style="color:var(--brand-600);font-weight:600;">เปิดโฟลเดอร์ Lot บน Google Drive →</a>
-          </p>
+          <p id="folderLinkWrap" class="hidden" style="font-size:13.5px;"><a id="folderLink" href="#" target="_blank" style="color:var(--signal-700);font-weight:600;">เปิดโฟลเดอร์ Lot บน Google Drive →</a></p>
           <button class="btn-secondary" onclick="goHome()">กลับหน้าแรก</button>
         </div>
       </div>
@@ -406,31 +307,10 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- LIVE CAMERA SCANNER MODAL -->
-<div class="camera-modal-bg" id="cameraModal">
-  <div class="camera-header">
-    <h3>📷 สแกน QR / Barcode</h3>
-    <button class="camera-close-btn" onclick="closeCameraScanner()">✕</button>
-  </div>
-
-  <div class="viewfinder-wrap" id="viewfinderWrap">
-    <video id="cameraVideo" playsinline autoplay muted></video>
-    <div class="target-scope">
-      <div class="target-laser"></div>
-    </div>
-    <div class="target-overlay-box hidden" id="targetOverlay"></div>
-  </div>
-
-  <div class="camera-controls">
-    <button class="cam-btn" onclick="switchCamera()">🔄 สลับกล้อง</button>
-    <button class="cam-btn" onclick="triggerFileFallback()">🖼 เลือกไฟล์รูปภาพ</button>
-  </div>
-</div>
-
 <!-- ADMIN OVERRIDE MODAL -->
 <div class="modal-bg" id="adminModalBg">
   <div class="modal">
-    <h3 style="color:var(--alert-600);">ข้ามขั้นตอน</h3>
+    <h3>ข้ามขั้นตอน</h3>
     <div class="sub2">สำหรับผู้ดูแลระบบเท่านั้น — จะถูกบันทึกไว้ใน Log ตรวจสอบย้อนหลัง</div>
     <label style="margin-top:0;">ชื่อผู้ดูแลระบบ</label>
     <select id="adminName"></select>
@@ -445,15 +325,93 @@
   </div>
 </div>
 
-<input type="file" id="fallbackFileInput" accept="image/*" style="display:none;">
+<!-- Hidden element required by html5-qrcode's scanFile() API (no live camera involved) -->
+<div id="scanFileRegion" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;"></div>
+
+<!-- SCAN FRAMING GUIDE — shown right before camera opens, since we can't overlay -->
+<!-- guidance on top of iOS's native camera view itself (not accessible to web pages) -->
+<div class="modal-bg" id="scanGuideModalBg">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <h3 style="color:var(--ink-900);margin-bottom:4px;">วิธีถ่ายให้สแกนติดง่าย</h3>
+    <svg viewBox="0 0 240 170" style="width:100%;max-width:250px;margin:8px auto;display:block;">
+      <rect x="8" y="8" width="224" height="154" rx="14" fill="none" stroke="#B7C8D1" stroke-width="2" stroke-dasharray="7 5"/>
+      <rect x="58" y="55" width="124" height="55" rx="5" fill="none" stroke="#2F8480" stroke-width="3.5"/>
+      <g stroke="#1E2A3A" stroke-width="4" stroke-linecap="round">
+        <line x1="70" y1="65" x2="70" y2="100"/>
+        <line x1="79" y1="65" x2="79" y2="100"/>
+        <line x1="85" y1="65" x2="85" y2="100"/>
+        <line x1="95" y1="65" x2="95" y2="100"/>
+        <line x1="102" y1="65" x2="102" y2="100"/>
+        <line x1="108" y1="65" x2="108" y2="100"/>
+        <line x1="118" y1="65" x2="118" y2="100"/>
+        <line x1="127" y1="65" x2="127" y2="100"/>
+        <line x1="133" y1="65" x2="133" y2="100"/>
+        <line x1="143" y1="65" x2="143" y2="100"/>
+        <line x1="152" y1="65" x2="152" y2="100"/>
+        <line x1="158" y1="65" x2="158" y2="100"/>
+        <line x1="168" y1="65" x2="168" y2="100"/>
+      </g>
+      <text x="120" y="140" font-size="12" fill="#7E93A3" text-anchor="middle">ให้เต็มกรอบเขียว ไม่เอียง</text>
+      <text x="120" y="28" font-size="11" fill="#B7C8D1" text-anchor="middle">ระยะห่างประมาณ 10-15 ซม.</text>
+    </svg>
+    <div style="text-align:left;font-size:13.5px;color:var(--ink-700);margin:8px 4px 14px;line-height:1.7;">
+      ✅ ห่างจากฉลากประมาณ 10-15 ซม.<br>
+      ✅ แสงสม่ำเสมอ ไม่มีเงาบัง/แสงสะท้อน<br>
+      ✅ ถือมือนิ่ง รอภาพชัดก่อนกดถ่าย
+    </div>
+    <div class="standard" style="text-align:left;">
+      <b>สำคัญ</b> พอกดปุ่มด้านล่าง จะมีเมนูให้เลือก — ถ้ามีตัวเลือก <b>"Scan Documents" (สแกนเอกสาร)</b> ให้เลือกอันนี้แทน "ถ่ายรูป" ธรรมดา จะได้กรอบนำสายตาสด ตัดขอบให้อัตโนมัติ แม่นยำกว่ามาก
+    </div>
+    <label class="btn-like btn-primary" id="scanGuideGoLabel">📷 เปิดกล้อง / เลือก Scan Documents</label>
+    <button class="btn-secondary" onclick="closeScanGuide()">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- CROP STEP — after taking the photo, drag/resize the box to isolate just the -->
+<!-- QR/barcode before decoding. This is the closest thing to "scan only inside -->
+<!-- this box" that's possible, since we can't overlay a live guide on the -->
+<!-- native camera view itself. -->
+<div class="modal-bg" id="cropModalBg">
+  <div class="modal" style="max-width:480px;">
+    <h3 style="color:var(--ink-900);margin-bottom:2px;">ลากกรอบให้เหลือแค่ QR/Barcode</h3>
+    <div class="sub2">ดึงขอบ/มุมกรอบให้พอดีกับโค้ด ตัดพื้นหลังที่ไม่เกี่ยวออก แล้วกดยืนยัน</div>
+    <div class="standard" style="text-align:left;">
+      <b>ถ้าเป็น Barcode เส้น (ไม่ใช่ QR)</b> ให้เผื่อขอบว่างซ้าย-ขวาของแท่งบาร์โค้ดไว้เล็กน้อย (~0.5-1 ซม.) อย่าตัดชิดแท่งจนเกินไป เพราะตัวถอดรหัสต้องใช้พื้นที่ว่างนี้หาจุดเริ่ม/จบของโค้ด — ต่างจาก QR ที่ตัดชิดได้เลย
+    </div>
+    <div style="max-height:48vh;overflow:hidden;margin-top:8px;background:#000;border-radius:10px;">
+      <img id="cropImageEl" style="max-width:100%;display:block;">
+    </div>
+    <div class="row2" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="cancelCrop()">ถ่ายใหม่</button>
+      <button class="btn-primary" onclick="confirmCrop()">ยืนยัน แล้วอ่านค่า</button>
+    </div>
+  </div>
+</div>
+
+<!-- OCR FALLBACK — if barcode decode fails, try reading the printed numbers/text -->
+<!-- directly instead. Always shown for review/edit since OCR can misread a digit. -->
+<div class="modal-bg" id="ocrModalBg">
+  <div class="modal" style="max-width:420px;">
+    <h3 style="color:var(--ink-900);margin-bottom:2px;">อ่านค่าด้วยตัวอักษร (OCR)</h3>
+    <div class="sub2">อ่านไม่ติดจากบาร์โค้ด/QR — นี่คือค่าที่อ่านได้จากตัวเลข/ตัวอักษรบนฉลาก กรุณาตรวจสอบและแก้ไขให้ถูกต้องก่อนใช้</div>
+    <div id="ocrRawResult" style="font-family:var(--font-mono);font-size:12px;color:var(--steel-500);background:var(--paper-50);border-radius:8px;padding:8px 10px;margin:10px 0 6px;white-space:pre-wrap;max-height:90px;overflow:auto;"></div>
+    <label style="margin-top:6px;">ค่าที่จะใช้ (แก้ไขได้)</label>
+    <input type="text" id="ocrEditableValue">
+    <div class="row2" style="margin-top:14px;">
+      <button class="btn-secondary" onclick="closeOcrModal()">ยกเลิก / พิมพ์เอง</button>
+      <button class="btn-primary" onclick="confirmOcrValue()">ใช้ค่านี้</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ================================================================
-// CONFIGURATION: Deploy Web App URL on Google Apps Script
+// PREVIEW SHIM — lets you open this file directly in a browser to
+// see the design before deploying to Apps Script. When this runs
+// for real inside Apps Script, google.script.run exists and every
+// call below goes to Code.gs as normal; this block does nothing.
 // ================================================================
-const GAS_WEB_APP_URL = "https://script.google.com/a/macros/niterragroup.com/s/AKfycbxi9ZnSeJPB8EtD_Bpg5W9fmHyrrCZ36JBWhbXpUOktN1OWRXrkqYIDhyOQWq2QNUhCVQ/exec"; // Replace with your GAS Web App URL when hosting on Netlify/GitHub Pages
-
-const IS_PREVIEW = !(window.google && google.script && google.script.run) && (GAS_WEB_APP_URL.indexOf("YOUR_DEPLOYMENT_ID") !== -1);
+const IS_PREVIEW = !(window.google && google.script && google.script.run);
 
 const MOCK_STEP_DEFS = [
   { key:'binder_dissolution', title:'Binder dissolution',
@@ -503,13 +461,11 @@ const MOCK_STEP_DEFS = [
     {id:'viscosity2', label:'Final viscosity', unit:'mPa·s', type:'number', required:true, min:160, max:220, standard:'[160-220 mPa·s] (Target 200)'}
   ]}
 ];
-
 const MOCK_OPERATORS = [
   { name:'สมชาย ใจดี', role:'Operator' },
   { name:'สมหญิง ตั้งใจ', role:'Operator' },
   { name:'หัวหน้าไลน์ วิชัย', role:'Admin' }
 ];
-
 let MOCK_LOTS = {};
 
 function mockCall(fnName, payload) {
@@ -526,6 +482,17 @@ function mockCall(fnName, payload) {
       } else if (fnName === 'getLot' || fnName === 'getLotSummary') {
         resolve(MOCK_LOTS[payload]);
       } else if (fnName === 'saveStep') {
+        const stepDef = MOCK_STEP_DEFS.find(function (s) { return s.key === payload.step; });
+        if (!payload.photoBase64) { reject({ message: 'กรุณาถ่ายรูปหลักฐานก่อนบันทึก' }); return; }
+        if (payload.step === 'mixing' && !payload.barcodeBase64) { reject({ message: 'ไม่พบบาร์โค้ด Lot กรุณาลองใหม่' }); return; }
+        for (const f of stepDef.fields) {
+          if (f.type !== 'number' || (f.min === undefined && f.max === undefined)) continue;
+          const raw = payload.fields[f.id];
+          if (raw === '' || raw === undefined) continue;
+          const val = parseFloat(raw);
+          if (f.min !== undefined && val < f.min) { reject({ message: 'ค่า "' + f.label + '" ต่ำกว่ามาตรฐาน (ขั้นต่ำ ' + f.min + ') — ห้ามบันทึก' }); return; }
+          if (f.max !== undefined && val > f.max) { reject({ message: 'ค่า "' + f.label + '" เกินมาตรฐาน (สูงสุด ' + f.max + ') — ห้ามบันทึก' }); return; }
+        }
         const lot = MOCK_LOTS[payload.lotId];
         const idx = MOCK_STEP_DEFS.findIndex(function (s) { return s.key === payload.step; });
         lot.CurrentStepIndex = idx + 1;
@@ -539,43 +506,56 @@ function mockCall(fnName, payload) {
       } else if (fnName === 'finalizeApproval') {
         MOCK_LOTS[payload.lotId].Status = 'Completed';
         resolve({ ok: true });
+      } else if (fnName === 'exportPdf') {
+        reject({ message: 'โหมดพรีวิว: Export PDF ใช้งานได้จริงเมื่อ Deploy บน Apps Script เท่านั้น' });
       } else {
-        reject({ message: 'Unknown mock function' });
+        reject({ message: 'Unknown mock fn ' + fnName });
       }
-    }, 200);
+    }, 260);
   });
 }
 
-function gsRun(fnName, arg) {
+function gsRun(fnName, arg, timeoutMs) {
+  timeoutMs = timeoutMs || 20000;
   const call = {
     _s: null, _f: null,
     withSuccessHandler: function (cb) { this._s = cb; return this; },
     withFailureHandler: function (cb) { this._f = cb; return this; },
     run: function () {
+      let settled = false;
       const self = this;
+      const timer = setTimeout(function () {
+        if (settled) return;
+        settled = true;
+        if (self._f) {
+          self._f({ message: 'การเชื่อมต่อขาดหาย หรือช้าผิดปกติ (รอเกิน ' + Math.round(timeoutMs / 1000) + ' วินาทีไม่มีการตอบกลับ) กรุณาเช็คสัญญาณ Wi-Fi แล้วลองใหม่อีกครั้ง' });
+        }
+      }, timeoutMs);
+      function wrapSuccess(res) {
+        if (settled) return;
+        settled = true; clearTimeout(timer);
+        if (self._s) self._s(res);
+      }
+      function wrapFail(err) {
+        if (settled) return;
+        settled = true; clearTimeout(timer);
+        if (self._f) self._f(err);
+      }
       if (IS_PREVIEW) {
-        mockCall(fnName, arg).then(function(res){ if(self._s) self._s(res); }, function(err){ if(self._f) self._f(err); });
-      } else if (window.google && google.script && google.script.run) {
-        google.script.run.withSuccessHandler(function(res){ if(self._s) self._s(res); }).withFailureHandler(function(err){ if(self._f) self._f(err); })[fnName](arg);
+        mockCall(fnName, arg).then(wrapSuccess, wrapFail);
       } else {
-        // Fetch API fallback for standalone web app hosting (Netlify / GitHub Pages)
-        fetch(GAS_WEB_APP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: fnName, payload: arg })
-        })
-        .then(res => res.json())
-        .then(res => {
-          if (res.error) { if (self._f) self._f(res.error); }
-          else { if (self._s) self._s(res.result); }
-        })
-        .catch(err => { if (self._f) self._f(err); });
+        try {
+          google.script.run.withSuccessHandler(wrapSuccess).withFailureHandler(wrapFail)[fnName](arg);
+        } catch (e) {
+          wrapFail({ message: 'ส่งข้อมูลไม่สำเร็จ (' + e.message + ') — ข้อมูลอาจใหญ่เกินไป ลองถ่ายรูปใหม่หรือรีเฟรชหน้า' });
+        }
       }
     }
   };
   return call;
 }
 
+// ---------- STEP ICONS (line-style, referencing the physical action of each station) ----------
 const ICONS = {
   binder_dissolution: '<path d="M9 2h6M10 2v5l-5 10a2 2 0 002 3h10a2 2 0 002-3l-5-10V2"/><path d="M7.5 14h9"/>',
   ball_mill_mixing: '<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4v16"/>',
@@ -588,44 +568,85 @@ const ICONS = {
 const CHECK_ICON = '<path d="M5 13l4 4L19 7"/>';
 const LOCK_ICON = '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>';
 
-function iconSvg(pathContent) {
+function iconSvg(pathContent){
   return '<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">' + pathContent + '</svg>';
 }
 
 let BOOT = null;
-let currentLot = null;
+let currentLot = null;   // {id, lotNo, currentStepIndex, ...}
 let currentStepDef = null;
 
+// ---------- INIT ----------
+window.addEventListener('error', function (e) {
+  showFatalError('JS error: ' + (e.message || e) + (e.filename ? (' (' + e.filename.split('/').pop() + ':' + e.lineno + ')') : ''));
+});
+window.addEventListener('unhandledrejection', function (e) {
+  const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
+  showFatalError('Promise error: ' + reason);
+});
+
 window.onload = function () {
-  gsRun('getBootstrap').withSuccessHandler(onBoot).withFailureHandler(function (err) {
-    toast('เกิดข้อผิดพลาดในการโหลด: ' + (err.message || err));
-  }).run();
+  try {
+    if (IS_PREVIEW) showPreviewBanner();
+    gsRun('getBootstrap').withSuccessHandler(onBoot).withFailureHandler(function (err) {
+      showFatalError('โหลดข้อมูลเริ่มต้นไม่สำเร็จ: ' + (err.message || err));
+    }).run();
+  } catch (e) {
+    showFatalError('เกิดข้อผิดพลาดตอนเริ่มหน้า: ' + e.message);
+  }
 };
 
-function onBoot(boot) {
-  BOOT = boot;
-  fillOperatorSelects();
-  buildRailPreview();
-
-  if (boot.inProgressLots && boot.inProgressLots.length) {
-    document.getElementById('wipSection').classList.remove('hidden');
-    const list = document.getElementById('wipList');
-    list.innerHTML = '';
-    boot.inProgressLots.forEach(function (l) {
-      const div = document.createElement('div');
-      div.className = 'item';
-      div.innerHTML = '<span class="lotname">' + l.lotNo + '</span><span class="badge wip">ขั้นที่ ' + (Number(l.currentStepIndex) + 1) + '/' + boot.stepDefs.length + '</span>';
-      div.onclick = function () { resumeLot(l.id); };
-      list.appendChild(div);
-    });
+function showFatalError(msg) {
+  let box = document.getElementById('fatalErrBox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'fatalErrBox';
+    box.style.cssText = 'background:var(--alert-100);color:var(--alert-600);border:1.5px solid var(--alert-600);' +
+      'border-radius:10px;padding:12px 14px;margin:14px 20px;font-size:13px;font-family:var(--font-mono);white-space:pre-wrap;';
+    document.querySelector('.topbar').insertAdjacentElement('afterend', box);
   }
-  initSigPad();
+  box.textContent = '⚠ ' + msg;
 }
 
-function buildRailPreview() {
+function showPreviewBanner() {
+  const b = document.createElement('div');
+  b.textContent = 'โหมดพรีวิว (เปิดไฟล์ตรงๆ) — ข้อมูลจำลอง ยังไม่เชื่อมต่อ Google Sheet จริง';
+  b.style.cssText = 'background:var(--signal-500);color:#fff;text-align:center;font-size:12.5px;font-weight:600;padding:7px;letter-spacing:.02em;';
+  document.body.insertBefore(b, document.body.firstChild);
+}
+
+function onBoot(boot) {
+  try {
+    if (!boot) {
+      showFatalError('เซิร์ฟเวอร์ไม่ส่งข้อมูลเริ่มต้นกลับมา (getBootstrap คืนค่าว่าง) — ลองเปิด Apps Script Editor > เลือกฟังก์ชัน getBootstrap > กด Run เพื่อดู error จริงใน Executions log');
+      return;
+    }
+    BOOT = boot;
+    fillOperatorSelects();
+    buildRailPreview();
+
+    if (boot.inProgressLots && boot.inProgressLots.length) {
+      document.getElementById('wipSection').classList.remove('hidden');
+      const list = document.getElementById('wipList');
+      list.innerHTML = '';
+      boot.inProgressLots.forEach(function (l) {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = '<span class="lotname">' + l.lotNo + '</span><span class="badge wip">ขั้นที่ ' + (Number(l.currentStepIndex) + 1) + '/' + boot.stepDefs.length + '</span>';
+        div.onclick = function () { resumeLot(l.id); };
+        list.appendChild(div);
+      });
+    }
+    initSigPad();
+  } catch (e) {
+    showFatalError('เกิดข้อผิดพลาดตอนแสดงผลหน้าแรก: ' + e.message);
+  }
+}
+
+function buildRailPreview(){
   const wrap = document.getElementById('railPreview');
   wrap.innerHTML = '';
-  BOOT.stepDefs.forEach(function (s, i) {
+  BOOT.stepDefs.forEach(function(s, i){
     const item = document.createElement('div');
     item.className = 'r-item';
     item.innerHTML = '<div class="r-node">' + iconSvg(ICONS[s.key] || '') + '</div><div class="r-label">' + s.title + '</div>';
@@ -641,13 +662,27 @@ function buildRailPreview() {
 function fillOperatorSelects() {
   const names = BOOT.operators.map(function (o) { return o.name; });
   const admins = BOOT.operators.filter(function (o) { return o.role === 'Admin'; }).map(function (o) { return o.name; });
+  const startBtn = document.querySelector('#screen-home .btn-primary');
+
+  if (!names.length) {
+    ['homeOperator', 'stepOperator', 'reviewedName', 'approvedName'].forEach(function (id) {
+      document.getElementById(id).innerHTML = '<option value="">— ยังไม่ได้ตั้งชื่อพนักงานในชีต Operators —</option>';
+    });
+    document.getElementById('adminName').innerHTML = '<option value="">— ไม่มี Admin —</option>';
+    if (startBtn) startBtn.disabled = true;
+    toast('ยังไม่พบรายชื่อพนักงาน กรุณาเพิ่มในชีต "Operators" ก่อน');
+    return;
+  }
+  if (startBtn) startBtn.disabled = false;
 
   ['homeOperator', 'stepOperator', 'reviewedName', 'approvedName'].forEach(function (id) {
     const sel = document.getElementById(id);
     sel.innerHTML = names.map(function (n) { return '<option>' + n + '</option>'; }).join('');
   });
   const adminSel = document.getElementById('adminName');
-  adminSel.innerHTML = admins.map(function (n) { return '<option>' + n + '</option>'; }).join('');
+  adminSel.innerHTML = admins.length
+    ? admins.map(function (n) { return '<option>' + n + '</option>'; }).join('')
+    : '<option value="">— ไม่มี Admin —</option>';
 }
 
 function showScreen(id) {
@@ -664,21 +699,6 @@ function showScreen(id) {
   }
 }
 
-function playBeep() {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(1046.5, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.15);
-  } catch (e) {}
-}
-
 function toast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -686,11 +706,13 @@ function toast(msg) {
   clearTimeout(window._toastTimer);
   window._toastTimer = setTimeout(function () { t.style.display = 'none'; }, 3200);
 }
+function onError(err) { toast('เกิดข้อผิดพลาด: ' + (err.message || err)); }
 
+// ---------- HOME ----------
 function goHome() {
   showScreen('screen-home');
   currentLot = null;
-  gsRun('getBootstrap').withSuccessHandler(onBoot).run();
+  gsRun('getBootstrap').withSuccessHandler(onBoot).withFailureHandler(onError).run();
 }
 
 function startNewLot() {
@@ -700,188 +722,28 @@ function startNewLot() {
   gsRun('createLot', { lotSuffix: lotSuffix, operatorName: operatorName }).withSuccessHandler(function (res) {
     currentLot = { id: res.id, lotNo: res.lotNo, currentStepIndex: res.currentStepIndex };
     renderStep();
-  }).run();
+  }).withFailureHandler(onError).run();
 }
 
 function resumeLot(id) {
   gsRun('getLotSummary', id).withSuccessHandler(function (lot) {
     currentLot = { id: lot.ID, lotNo: lot.LotNo, currentStepIndex: lot.CurrentStepIndex };
-    if (Number(lot.CurrentStepIndex) >= BOOT.stepDefs.length) renderFinal(); else renderStep();
-  }).run();
-}
-
-/* LIVE CAMERA SCANNER CONTROLLER FOR iPad */
-let activeScanTargetFieldId = null;
-let activeVideoStream = null;
-let isCameraFacingUser = false;
-let cameraScanInterval = null;
-
-function triggerLiveScanner(fieldId) {
-  activeScanTargetFieldId = fieldId;
-  const modal = document.getElementById('cameraModal');
-  modal.style.display = 'flex';
-  startCameraStream();
-}
-
-function closeCameraScanner() {
-  stopCameraStream();
-  document.getElementById('cameraModal').style.display = 'none';
-  document.getElementById('targetOverlay').classList.add('hidden');
-}
-
-function switchCamera() {
-  isCameraFacingUser = !isCameraFacingUser;
-  startCameraStream();
-}
-
-async function startCameraStream() {
-  stopCameraStream();
-  const video = document.getElementById('cameraVideo');
-  const constraints = {
-    video: {
-      facingMode: isCameraFacingUser ? 'user' : 'environment',
-      width: { ideal: 1280 },
-      height: { ideal: 720 }
-    }
-  };
-
-  try {
-    activeVideoStream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = activeVideoStream;
-    video.setAttribute('playsinline', true);
-    await video.play();
-    startFrameScanner();
-  } catch (err) {
-    toast('ไม่สามารถเปิดกล้องสดได้: ' + (err.message || 'Permission denied'));
-    // Auto Fallback to image picker if live stream fails
-    triggerFileFallback();
-  }
-}
-
-function stopCameraStream() {
-  if (cameraScanInterval) clearInterval(cameraScanInterval);
-  if (activeVideoStream) {
-    activeVideoStream.getTracks().forEach(track => track.stop());
-    activeVideoStream = null;
-  }
-}
-
-function startFrameScanner() {
-  const video = document.getElementById('cameraVideo');
-  const overlay = document.getElementById('targetOverlay');
-
-  if ('BarcodeDetector' in window) {
-    const detector = new BarcodeDetector({
-      formats: ['qr_code', 'code_128', 'code_39', 'code_93', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'data_matrix']
-    });
-
-    cameraScanInterval = setInterval(async () => {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes.length > 0) {
-            const b = barcodes[0];
-            highlightDetectedTarget(b.boundingBox);
-            applyScanValue(activeScanTargetFieldId, b.rawValue);
-            closeCameraScanner();
-          } else {
-            overlay.classList.add('hidden');
-          }
-        } catch (e) {}
-      }
-    }, 200);
-  } else if (window.ZXing) {
-    const codeReader = new ZXing.BrowserMultiFormatReader();
-    codeReader.decodeFromVideoElement(video, (result, err) => {
-      if (result) {
-        applyScanValue(activeScanTargetFieldId, result.getText());
-        codeReader.reset();
-        closeCameraScanner();
-      }
-    });
-  }
-}
-
-function highlightDetectedTarget(box) {
-  if (!box) return;
-  const overlay = document.getElementById('targetOverlay');
-  overlay.style.left = box.x + 'px';
-  overlay.style.top = box.y + 'px';
-  overlay.style.width = box.width + 'px';
-  overlay.style.height = box.height + 'px';
-  overlay.classList.remove('hidden');
-}
-
-function triggerFileFallback() {
-  const input = document.getElementById('fallbackFileInput');
-  input.onchange = function (e) {
-    const file = e.target.files && e.target.files[0];
-    if (file) processScanPhoto(activeScanTargetFieldId, file);
-    input.value = '';
-  };
-  input.click();
-}
-
-async function processScanPhoto(fieldId, file) {
-  toast('กำลังสแกนถอดรหัสรูปภาพ...');
-  try {
-    const image = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
-
-    let resultText = null;
-    if ('BarcodeDetector' in window) {
-      try {
-        const detector = new BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13'] });
-        const barcodes = await detector.detect(image);
-        if (barcodes.length > 0) resultText = barcodes[0].rawValue;
-      } catch (e) {}
-    }
-
-    if (!resultText && window.ZXing) {
-      try {
-        const codeReader = new ZXing.BrowserMultiFormatReader();
-        const res = await codeReader.decodeFromImageElement(image);
-        if (res) resultText = res.getText();
-      } catch (e) {}
-    }
-
-    if (resultText) {
-      applyScanValue(fieldId, resultText);
-      closeCameraScanner();
+    if (Number(lot.CurrentStepIndex) >= BOOT.stepDefs.length) {
+      renderFinal();
     } else {
-      toast('❌ ไม่พบโค้ด กรุณาพิมพ์ลงในช่องโดยตรง');
+      renderStep();
     }
-  } catch (e) {
-    toast('เกิดข้อผิดพลาดในการสแกนไฟล์ภาพ');
-  }
+  }).withFailureHandler(onError).run();
 }
 
-function applyScanValue(fieldId, val) {
-  const inputEl = document.getElementById('f_' + fieldId);
-  if (inputEl) {
-    inputEl.value = val;
-    inputEl.classList.add('scan-flash');
-    setTimeout(() => inputEl.classList.remove('scan-flash'), 1200);
-  }
-  playBeep();
-  toast('✔ สแกนสำเร็จ: ' + val);
-}
-
+// ---------- STEP WIZARD ----------
 function renderStep() {
   const idx = Number(currentLot.currentStepIndex);
   if (idx >= BOOT.stepDefs.length) { renderFinal(); return; }
   currentStepDef = BOOT.stepDefs[idx];
   showScreen('screen-step');
 
-  document.getElementById('stepEyebrow').textContent = 'STATION 0' + (idx + 1) + ' / 0' + BOOT.stepDefs.length;
+  document.getElementById('stepEyebrow').textContent = 'Station 0' + (idx + 1) + ' / 0' + BOOT.stepDefs.length;
   document.getElementById('stepLotNo').textContent = 'Lot No. ' + currentLot.lotNo;
   document.getElementById('stepTitle').textContent = currentStepDef.title;
 
@@ -896,14 +758,13 @@ function renderStep() {
     notice.innerHTML = '<b>หมายเหตุ</b> ' + currentStepDef.notice;
     fieldsDiv.appendChild(notice);
   }
-
   currentStepDef.fields.forEach(function (f) {
     const wrap = document.createElement('div');
     if (f.type === 'checkbox') {
       wrap.innerHTML =
         '<label>' + f.label + '</label>' +
         (f.standard ? '<div class="standard"><b>มาตรฐาน</b> ' + f.standard + '</div>' : '') +
-        '<div class="checkrow"><input type="checkbox" id="f_' + f.id + '"><span>ยืนยันการตรวจสอบ / Checked</span></div>';
+        '<div class="checkrow"><input type="checkbox" id="f_' + f.id + '"><span>ยืนยัน / Checked</span></div>';
     } else if (f.type === 'datetime') {
       wrap.innerHTML =
         '<label>' + f.label + '</label>' +
@@ -915,43 +776,370 @@ function renderStep() {
         '<label>' + f.label + (f.unit ? ' <span class="unit">(' + f.unit + ')</span>' : '') + '</label>' +
         (f.standard ? '<div class="standard"><b>มาตรฐาน</b> ' + f.standard + '</div>' : '') +
         (isScan
-          ? '<div class="scan-row">' +
-              '<input type="text" id="f_' + f.id + '" placeholder="แตะสแกน หรือพิมพ์เอง">' +
-              '<button type="button" class="scan-btn" onclick="triggerLiveScanner(\'' + f.id + '\')">📷 สแกน</button>' +
-            '</div>'
+          ? '<div class="scanrow">' +
+              '<input type="text" id="f_' + f.id + '" placeholder="แตะปุ่มสแกน หรือพิมพ์เอง">' +
+              '<button type="button" class="scan-btn" onclick="openScanGuide(\'scanfile_' + f.id + '\')">📷 สแกน</button>' +
+              '<input type="file" accept="image/*" id="scanfile_' + f.id + '" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">' +
+            '</div>' +
+            '<div style="font-size:11.5px;color:var(--steel-500);margin-top:4px;">💡 ให้บาร์โค้ด/QR เต็มเฟรม ไม่เอียง แสงสม่ำเสมอ ไม่มีแสงสะท้อน</div>'
           : '<input type="' + (f.type === 'number' ? 'number' : 'text') + '" id="f_' + f.id + '" ' + (f.type === 'number' ? 'inputmode="decimal" step="any"' : '') + '>') +
         (f.type === 'number' && (f.min !== undefined || f.max !== undefined) ? '<div class="spec-err" id="specerr_' + f.id + '"></div>' : '');
     }
     fieldsDiv.appendChild(wrap);
+    if (f.type === 'number' && (f.min !== undefined || f.max !== undefined)) {
+      document.getElementById('f_' + f.id).addEventListener('input', function () { checkFieldSpecLive(f); });
+    }
+    if (f.type === 'text' && f.scan) {
+      document.getElementById('scanfile_' + f.id).addEventListener('change', function (e) {
+        closeScanGuide();
+        const file = e.target.files && e.target.files[0];
+        if (file) openCropModal(file, 'f_' + f.id, 'scanfile_' + f.id);
+      });
+    }
   });
+
+  if (currentStepDef.key === 'mixing') {
+    buildMixingBarcode();
+  } else {
+    currentMixingBarcodeDataUrl = null;
+  }
 
   buildPhotoCapture();
   clearSig();
 }
 
+let currentMixingBarcodeDataUrl = null;
+
+function buildMixingBarcode() {
+  const wrap = document.createElement('div');
+  wrap.innerHTML =
+    '<label>บาร์โค้ด Lot (สร้างอัตโนมัติ)</label>' +
+    '<div class="standard"><b>หมายเหตุ</b> บาร์โค้ดนี้เข้ารหัสเลข Lot No. สำหรับใช้สแกนอ้างอิงในสายการผลิต — สร้างให้อัตโนมัติ ไม่ต้องกรอกเอง</div>' +
+    '<div style="background:#fff;border:1.5px solid var(--steel-200);border-radius:var(--radius-sm);padding:10px;text-align:center;min-height:60px;">' +
+    '<canvas id="mixingBarcodeCanvas"></canvas></div>';
+  document.getElementById('stepFields').appendChild(wrap);
+  currentMixingBarcodeDataUrl = null;
+  loadScriptOnce('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js', function () {
+    try {
+      JsBarcode('#mixingBarcodeCanvas', currentLot.lotNo, { format: 'CODE128', displayValue: true, height: 50, fontSize: 14, margin: 6 });
+      currentMixingBarcodeDataUrl = document.getElementById('mixingBarcodeCanvas').toDataURL('image/png');
+    } catch (e) {
+      currentMixingBarcodeDataUrl = null;
+      toast('สร้างบาร์โค้ดไม่สำเร็จ: ' + e.message);
+    }
+  });
+}
+
+let currentPhotoDataUrl = null;
+
+// ---------- LAZY-LOAD HEAVY LIBRARIES (only fetched when actually needed) ----------
+const _scriptLoadState = {};
+function loadScriptOnce(url, cb) {
+  if (_scriptLoadState[url] === 'done') { cb(); return; }
+  if (_scriptLoadState[url] === 'loading') { _scriptLoadState[url + '_cbs'].push(cb); return; }
+  _scriptLoadState[url] = 'loading';
+  _scriptLoadState[url + '_cbs'] = [cb];
+  const s = document.createElement('script');
+  s.src = url;
+  s.onload = function () {
+    _scriptLoadState[url] = 'done';
+    _scriptLoadState[url + '_cbs'].forEach(function (f) { f(); });
+  };
+  s.onerror = function () { toast('โหลดไลบรารีไม่สำเร็จ กรุณาเช็คอินเทอร์เน็ตแล้วลองใหม่'); };
+  document.head.appendChild(s);
+}
+
+// NOTE: Apps Script Web Apps serve pages inside a wrapper iframe whose Permissions
+// Policy blocks live camera streaming (getUserMedia) outright — this is a platform
+// restriction, not something fixable from this code. So scanning works by taking a
+// STILL PHOTO via the same native-camera file input used for evidence photos (which
+// is not blocked, since it hands off to the OS camera app rather than calling
+// getUserMedia), then decoding that photo client-side with html5-qrcode's scanFile()
+// API — which only processes image data and never touches the camera API.
+let _html5QrFileScanner = null;
+
+function openScanGuide(inputId) {
+  document.getElementById('scanGuideGoLabel').setAttribute('for', inputId);
+  document.getElementById('scanGuideModalBg').style.display = 'flex';
+}
+function closeScanGuide() {
+  document.getElementById('scanGuideModalBg').style.display = 'none';
+}
+
+// ---------- CROP STEP (Cropper.js, lazy-loaded) ----------
+const _styleLoadState = {};
+function loadStylesheetOnce(url) {
+  if (_styleLoadState[url]) return;
+  _styleLoadState[url] = true;
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = url;
+  document.head.appendChild(link);
+}
+
+let _cropper = null;
+let _cropTargetFieldId = null;
+let _cropInputId = null;
+let _cropObjectUrl = null;
+
+function openCropModal(rawFile, targetFieldId, inputId) {
+  _cropTargetFieldId = targetFieldId;
+  _cropInputId = inputId;
+  if (_cropObjectUrl) URL.revokeObjectURL(_cropObjectUrl);
+  _cropObjectUrl = URL.createObjectURL(rawFile);
+  const img = document.getElementById('cropImageEl');
+  img.src = _cropObjectUrl;
+  document.getElementById('cropModalBg').style.display = 'flex';
+
+  loadStylesheetOnce('https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css');
+  loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js', function () {
+    function initCropper() {
+      if (_cropper) { _cropper.destroy(); }
+      _cropper = new Cropper(img, {
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.6,
+        background: false,
+        movable: true,
+        zoomable: true,
+        scalable: false,
+        guides: true,
+        responsive: true
+      });
+    }
+    if (img.complete) initCropper(); else img.onload = initCropper;
+  });
+}
+
+function cancelCrop() {
+  document.getElementById('cropModalBg').style.display = 'none';
+  if (_cropper) { _cropper.destroy(); _cropper = null; }
+  if (_cropInputId) openScanGuide(_cropInputId); // let them retake right away
+}
+
+function confirmCrop() {
+  if (!_cropper) { toast('กำลังโหลดตัวตัดภาพ กรุณารอสักครู่แล้วลองอีกครั้ง'); return; }
+  const canvas = _cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' });
+  canvas.toBlob(function (blob) {
+    const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+    document.getElementById('cropModalBg').style.display = 'none';
+    _cropper.destroy(); _cropper = null;
+    handleScanFile(_cropTargetFieldId, file);
+  }, 'image/jpeg', 0.92);
+}
+
+function fileToImage(file) {
+  return new Promise(function (resolve, reject) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function () { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = function (e) { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+
+function canvasToFile(canvas, name) {
+  return new Promise(function (resolve) {
+    canvas.toBlob(function (blob) { resolve(new File([blob], name, { type: 'image/jpeg' })); }, 'image/jpeg', 0.92);
+  });
+}
+
+// Downscale to a consistent size — very large camera photos can actually hurt decode
+// reliability/speed; a moderate, consistent resolution tends to decode more reliably.
+function resizeForScan(file, maxDim) {
+  return fileToImage(file).then(function (img) {
+    let w = img.width, h = img.height;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else { w = Math.round(w * maxDim / h); h = maxDim; }
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    return canvasToFile(canvas, 'scan_resized.jpg');
+  });
+}
+
+// Grayscale + contrast-stretch — helps a lot with dim factory lighting or slight glare,
+// used as a second-pass retry only if the plain resized image fails to decode.
+function enhanceContrastForScan(file) {
+  return fileToImage(file).then(function (img) {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width; canvas.height = img.height;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = imgData.data;
+    let min = 255, max = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+      d[i] = d[i + 1] = d[i + 2] = gray;
+      if (gray < min) min = gray;
+      if (gray > max) max = gray;
+    }
+    const range = Math.max(1, max - min);
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.min(255, Math.max(0, (d[i] - min) * 255 / range));
+      d[i] = d[i + 1] = d[i + 2] = v;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return canvasToFile(canvas, 'scan_enhanced.jpg');
+  });
+}
+
+function applyScanResult(fieldId, decodedText) {
+  const el = document.getElementById(fieldId);
+  if (el) { el.value = decodedText; el.dispatchEvent(new Event('input')); }
+  toast('สแกนสำเร็จ: ' + decodedText);
+}
+
+let _ocrTargetFieldId = null;
+
+function runOcrFallback(fieldId, file) {
+  toast('อ่านบาร์โค้ดไม่ติด กำลังลองอ่านตัวอักษร/ตัวเลขแทน...');
+  loadScriptOnce('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js', function () {
+    if (!window.Tesseract) {
+      toast('โหลดตัวอ่านตัวอักษรไม่สำเร็จ กรุณาพิมพ์ค่าเอง');
+      return;
+    }
+    Tesseract.recognize(file, 'eng', {
+      // Restrict to characters typically found in L/N codes — improves accuracy
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_/. '
+    }).then(function (result) {
+      const rawText = (result && result.data && result.data.text ? result.data.text : '').trim();
+      _ocrTargetFieldId = fieldId;
+      document.getElementById('ocrRawResult').textContent = rawText || '(ไม่พบตัวอักษรในภาพ)';
+      // Best-guess: first non-empty line, cleaned of stray whitespace
+      const firstLine = rawText.split('\n').map(function (l) { return l.trim(); }).filter(Boolean)[0] || '';
+      document.getElementById('ocrEditableValue').value = firstLine;
+      document.getElementById('ocrModalBg').style.display = 'flex';
+    }).catch(function (err) {
+      toast('อ่านตัวอักษรไม่สำเร็จ: ' + (err && err.message ? err.message : err) + ' — กรุณาพิมพ์ค่าเอง');
+    });
+  });
+}
+
+function closeOcrModal() {
+  document.getElementById('ocrModalBg').style.display = 'none';
+}
+
+function confirmOcrValue() {
+  const val = document.getElementById('ocrEditableValue').value;
+  if (_ocrTargetFieldId) {
+    const el = document.getElementById(_ocrTargetFieldId);
+    if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+  }
+  closeOcrModal();
+  toast('ใช้ค่าที่แก้ไขแล้วเรียบร้อย');
+}
+
+function handleScanFile(fieldId, file) {
+  if (!file) return;
+  toast('กำลังอ่านบาร์โค้ด/QR จากรูป...');
+  loadScriptOnce('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js', function () {
+    try {
+      if (!_html5QrFileScanner) {
+        _html5QrFileScanner = new Html5Qrcode('scanFileRegion');
+      }
+      resizeForScan(file, 1600).then(function (resized) {
+        return _html5QrFileScanner.scanFile(resized, false)
+          .then(function (decodedText) { applyScanResult(fieldId, decodedText); })
+          .catch(function () {
+            toast('ยังอ่านไม่ติด กำลังลองปรับภาพแล้วอ่านซ้ำ...');
+            return enhanceContrastForScan(resized).then(function (enhanced) {
+              return _html5QrFileScanner.scanFile(enhanced, false);
+            }).then(function (decodedText) { applyScanResult(fieldId, decodedText); })
+            .catch(function () { runOcrFallback(fieldId, resized); });
+          });
+      }).catch(function (err) {
+        toast('อ่านค่าไม่สำเร็จ: ' + (err && err.message ? err.message : err) + ' — ลองถ่ายใหม่ให้ QR/Barcode อยู่กึ่งกลางภาพ โฟกัสชัด แสงเพียงพอ หรือพิมพ์ค่าเอง');
+      });
+    } catch (e) {
+      toast('เกิดข้อผิดพลาดตอนอ่านบาร์โค้ด: ' + e.message + ' — กรุณาพิมพ์ค่าเอง');
+    }
+  });
+}
+
 function buildPhotoCapture() {
+  currentPhotoDataUrl = null;
   const area = document.getElementById('photoCaptureArea');
   area.innerHTML =
-    '<div class="photo-box">' +
+    '<div class="photo-box" id="photoBox">' +
     '<div id="photoPreviewWrap"></div>' +
     '<label class="photo-btn" for="photoInput">📷 ถ่ายรูปหลักฐาน</label>' +
     '<input type="file" accept="image/*" capture="environment" id="photoInput" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">' +
     '<div class="photo-status" id="photoStatus">ยังไม่ได้ถ่ายรูป</div>' +
     '</div>';
-
   document.getElementById('photoInput').addEventListener('change', function (e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     const st = document.getElementById('photoStatus');
-    st.textContent = '✔ ถ่ายรูปแล้ว';
-    st.className = 'photo-status ok';
+    st.textContent = 'กำลังบีบอัดรูป...';
+    st.className = 'photo-status';
+    const reader = new FileReader();
+    reader.onload = function () {
+      const img = new Image();
+      img.onload = function () {
+        const maxDim = 1280;
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        currentPhotoDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+        document.getElementById('photoPreviewWrap').innerHTML = '<img src="' + currentPhotoDataUrl + '">';
+        st.textContent = '✔ ถ่ายรูปแล้ว (แตะปุ่มเพื่อถ่ายใหม่)';
+        st.className = 'photo-status ok';
+      };
+      img.onerror = function () {
+        // fallback: use original if resizing fails for any reason
+        currentPhotoDataUrl = reader.result;
+        document.getElementById('photoPreviewWrap').innerHTML = '<img src="' + currentPhotoDataUrl + '">';
+        st.textContent = '✔ ถ่ายรูปแล้ว';
+        st.className = 'photo-status ok';
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   });
 }
 
-function buildRail(idx) {
+function checkFieldSpecLive(f) {
+  const el = document.getElementById('f_' + f.id);
+  const errEl = document.getElementById('specerr_' + f.id);
+  if (!el || !errEl) return;
+  const raw = el.value;
+  errEl.textContent = '';
+  el.classList.remove('field-error');
+  if (raw === '') return;
+  const val = parseFloat(raw);
+  if (isNaN(val)) return;
+  let msg = null;
+  if (f.min !== undefined && val < f.min) msg = 'ต่ำกว่า Spec (ขั้นต่ำ ' + f.min + (f.unit ? ' ' + f.unit : '') + ') — จะบันทึกไม่ได้';
+  if (f.max !== undefined && val > f.max) msg = 'เกิน Spec (สูงสุด ' + f.max + (f.unit ? ' ' + f.unit : '') + ') — จะบันทึกไม่ได้';
+  if (msg) { errEl.textContent = '⚠ ' + msg; el.classList.add('field-error'); }
+}
+
+function stepFieldsHaveSpecError() {
+  let bad = false;
+  currentStepDef.fields.forEach(function (f) {
+    if (f.type !== 'number' || (f.min === undefined && f.max === undefined)) return;
+    const el = document.getElementById('f_' + f.id);
+    if (!el || el.value === '') return;
+    const val = parseFloat(el.value);
+    if (isNaN(val)) return;
+    if ((f.min !== undefined && val < f.min) || (f.max !== undefined && val > f.max)) bad = true;
+  });
+  return bad;
+}
+
+function buildRail(idx){
   const rail = document.getElementById('rail');
   rail.innerHTML = '';
-  BOOT.stepDefs.forEach(function (s, i) {
+  BOOT.stepDefs.forEach(function(s, i){
     const wrap = document.createElement('div');
     wrap.className = 'node-wrap';
     const state = i < idx ? 'done' : (i === idx ? 'current' : 'locked');
@@ -966,49 +1154,164 @@ function buildRail(idx) {
   });
 }
 
-function openAdminModal() { document.getElementById('adminModalBg').style.display = 'flex'; }
-function closeAdminModal() { document.getElementById('adminModalBg').style.display = 'none'; }
-function confirmOverride() { closeAdminModal(); toast('ข้ามขั้นตอนแล้ว'); }
-
-function submitStep() {
-  const btn = document.getElementById('saveStepBtn');
-  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-  setTimeout(function () {
-    btn.disabled = false; btn.textContent = 'บันทึกและไปขั้นต่อไป →';
-    currentLot.currentStepIndex = Number(currentLot.currentStepIndex) + 1;
-    if (currentLot.currentStepIndex >= BOOT.stepDefs.length) renderFinal(); else renderStep();
-  }, 400);
+function collectFieldValues() {
+  const values = {};
+  currentStepDef.fields.forEach(function (f) {
+    const el = document.getElementById('f_' + f.id);
+    if (f.type === 'checkbox') values[f.id] = el.checked;
+    else values[f.id] = el.value;
+  });
+  return values;
 }
 
+function submitStep() {
+  if (stepFieldsHaveSpecError()) { toast('มีค่าที่เกิน Spec กรุณาแก้ไขก่อนบันทึก'); return; }
+  if (!currentPhotoDataUrl) { toast('กรุณาถ่ายรูปหลักฐานก่อนบันทึก'); return; }
+  if (currentStepDef.key === 'mixing' && !currentMixingBarcodeDataUrl) { toast('ไม่พบบาร์โค้ด Lot กรุณาลองใหม่'); return; }
+  if (sigIsEmpty(sigPadCtx, sigPadCanvas)) { toast('กรุณาเซ็นชื่อยืนยันก่อนบันทึก'); return; }
+  const btn = document.getElementById('saveStepBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  const payload = {
+    lotId: currentLot.id,
+    step: currentStepDef.key,
+    fields: collectFieldValues(),
+    signatureBase64: sigPadCanvas.toDataURL('image/png'),
+    photoBase64: currentPhotoDataUrl,
+    barcodeBase64: currentStepDef.key === 'mixing' ? currentMixingBarcodeDataUrl : undefined,
+    operatorName: document.getElementById('stepOperator').value
+  };
+  gsRun('saveStep', payload).withSuccessHandler(function (res) {
+    btn.disabled = false; btn.textContent = 'บันทึกและไปขั้นต่อไป →';
+    currentLot.currentStepIndex = res.nextStepIndex;
+    if (res.isComplete) renderFinal(); else renderStep();
+  }).withFailureHandler(function (err) {
+    btn.disabled = false; btn.textContent = 'บันทึกและไปขั้นต่อไป →';
+    onError(err);
+  }).run();
+}
+
+// ---------- ADMIN OVERRIDE ----------
+function openAdminModal() { document.getElementById('adminModalBg').style.display = 'flex'; }
+function closeAdminModal() { document.getElementById('adminModalBg').style.display = 'none'; }
+function confirmOverride() {
+  const payload = {
+    lotId: currentLot.id,
+    adminName: document.getElementById('adminName').value,
+    adminPin: document.getElementById('adminPin').value,
+    reason: document.getElementById('adminReason').value
+  };
+  gsRun('overrideStep', payload).withSuccessHandler(function (res) {
+    closeAdminModal();
+    toast('ข้ามขั้นตอนเรียบร้อย (บันทึกใน Log แล้ว)');
+    currentLot.currentStepIndex = res.nextStepIndex;
+    if (res.isComplete) renderFinal(); else renderStep();
+  }).withFailureHandler(onError).run();
+}
+
+// ---------- FINAL APPROVAL ----------
 function renderFinal() {
   showScreen('screen-final');
   document.getElementById('finalLotNo').textContent = 'Lot No. ' + currentLot.lotNo;
+  clearCanvas(sigReviewedCtx, sigReviewedCanvas);
+  clearCanvas(sigApprovedCtx, sigApprovedCanvas);
 }
 
 function submitFinal() {
-  showScreen('screen-done');
-  document.getElementById('doneLotNo').textContent = 'Lot No. ' + currentLot.lotNo;
+  if (sigIsEmpty(sigReviewedCtx, sigReviewedCanvas)) { toast('กรุณาเซ็นชื่อผู้ตรวจสอบ'); return; }
+  if (sigIsEmpty(sigApprovedCtx, sigApprovedCanvas)) { toast('กรุณาเซ็นชื่อผู้อนุมัติ'); return; }
+  const payload = {
+    lotId: currentLot.id,
+    reviewedName: document.getElementById('reviewedName').value,
+    reviewedSignature: sigReviewedCanvas.toDataURL('image/png'),
+    approvedName: document.getElementById('approvedName').value,
+    approvedSignature: sigApprovedCanvas.toDataURL('image/png')
+  };
+  gsRun('finalizeApproval', payload).withSuccessHandler(function () {
+    document.getElementById('doneLotNo').textContent = 'Lot No. ' + currentLot.lotNo + ' อนุมัติเรียบร้อยแล้ว';
+    showScreen('screen-done');
+  }).withFailureHandler(onError).run();
 }
 
-function exportPdfNow() { toast('กำลังสร้าง PDF...'); }
+function exportPdfNow() {
+  toast('กำลังสร้าง PDF...');
+  gsRun('exportPdf', currentLot.id).withSuccessHandler(function (res) {
+    if (res.pdfUrl && res.pdfUrl !== '#') {
+      const link = document.createElement('a');
+      link.href = res.pdfUrl;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast('เปิด PDF ใน Google Drive แล้ว — กดปุ่มดาวน์โหลด/พิมพ์ใน Drive ได้เลย');
+    } else {
+      toast('สร้าง PDF สำเร็จ (โหมดพรีวิว: เปิดไฟล์จริงไม่ได้จนกว่าจะ deploy)');
+    }
+    if (res.folderUrl && res.folderUrl !== '#') {
+      document.getElementById('folderLink').href = res.folderUrl;
+      document.getElementById('folderLinkWrap').classList.remove('hidden');
+    }
+  }).withFailureHandler(onError).run();
+}
 
-/* SIGNATURE PAD CONTROLLER */
+// ---------- SIGNATURE PADS (canvas) ----------
 let sigPadCanvas, sigPadCtx, sigReviewedCanvas, sigReviewedCtx, sigApprovedCanvas, sigApprovedCtx;
 
 function setupCanvas(canvas) {
   const ctx = canvas.getContext('2d');
-  ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#1C2833';
+  function resize() {
+    const ratio = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2.4;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1E2A3A';
+  }
+  resize();
+  let drawing = false, lastX = 0, lastY = 0;
+  function pos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+  function start(e) { drawing = true; const p = pos(e); lastX = p.x; lastY = p.y; e.preventDefault(); }
+  function move(e) {
+    if (!drawing) return;
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+    lastX = p.x; lastY = p.y; e.preventDefault();
+    canvas.dataset.touched = '1';
+    if (canvas === sigPadCanvas) document.getElementById('sigStatus').className = 'status ok';
+    if (canvas === sigPadCanvas) document.getElementById('sigStatus').textContent = '✔ เซ็นแล้ว';
+  }
+  function end() { drawing = false; }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
   return ctx;
 }
 
 function initSigPad() {
   sigPadCanvas = document.getElementById('sigPad'); sigPadCtx = setupCanvas(sigPadCanvas);
   sigReviewedCanvas = document.getElementById('sigReviewed'); sigReviewedCtx = setupCanvas(sigReviewedCanvas);
-  sigApprovedCanvas = document.getElementById('sigApproved'); sigApprovedCtx = setupCanvas(sigApprovedCtx);
+  sigApprovedCanvas = document.getElementById('sigApproved'); sigApprovedCtx = setupCanvas(sigApprovedCanvas);
 }
 
-function clearCanvas(ctx, canvas) { ctx.clearRect(0, 0, canvas.width, canvas.height); }
-function clearSig() { if (sigPadCanvas) clearCanvas(sigPadCtx, sigPadCanvas); }
+function clearCanvas(ctx, canvas) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.dataset.touched = '';
+}
+function clearSig() {
+  if (sigPadCanvas) clearCanvas(sigPadCtx, sigPadCanvas);
+  const s = document.getElementById('sigStatus');
+  s.className = ''; s.textContent = 'ยังไม่ได้เซ็น';
+}
+function sigIsEmpty(ctx, canvas) { return canvas.dataset.touched !== '1'; }
 </script>
 </body>
 </html>
